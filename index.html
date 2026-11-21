@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f2ff">
+  <title>Let's Get to Know You</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ---------- theme: soft pastel by default, dark mode follows the device ---------- */
+    :root {
+      color-scheme: light dark;
+      --bg: #f5f2ff;
+      --card: #ffffff;
+      --ink: #241f3a;
+      --muted: #7b7595;
+      --line: #e7e2fa;
+      --soft: #f0ecff;
+      --accent: #6c5ce7;
+      --accent-b: #8e6bf2;
+      --on-accent: #ffffff;
+      --glow: rgba(108, 92, 231, 0.45);
+      --error: #d1344f;
+      --blob-a: #d9d0ff;
+      --blob-b: #ffd3e4;
+      --shadow: 0 24px 60px -16px rgba(88, 70, 180, 0.28), 0 4px 14px rgba(88, 70, 180, 0.08);
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #13111f;
+        --card: #1c1930;
+        --ink: #f1eeff;
+        --muted: #a49fc2;
+        --line: #2f2a4c;
+        --soft: #262243;
+        --accent: #9d90ff;
+        --accent-b: #c2aeff;
+        --on-accent: #1a1530;
+        --glow: rgba(157, 144, 255, 0.4);
+        --error: #ff7a90;
+        --blob-a: #3a2f7a;
+        --blob-b: #6b2d54;
+        --shadow: 0 24px 60px -16px rgba(0, 0, 0, 0.7), 0 4px 14px rgba(0, 0, 0, 0.3);
+      }
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 20px 16px;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    /* soft blurred color blobs behind the card */
+    body::before, body::after {
+      content: "";
+      position: fixed;
+      z-index: -1;
+      width: 46vmax;
+      height: 46vmax;
+      border-radius: 50%;
+      filter: blur(70px);
+      opacity: 0.6;
+      pointer-events: none;
+      animation: drift 18s ease-in-out infinite alternate;
+    }
+    body::before { top: -18vmax; left: -12vmax; background: var(--blob-a); }
+    body::after  { bottom: -20vmax; right: -14vmax; background: var(--blob-b); animation-delay: -9s; }
+
+    @keyframes drift {
+      to { transform: translate(6vmax, 4vmax) scale(1.12); }
+    }
+
+    /* ---------- card ---------- */
+    .card {
+      width: 100%;
+      max-width: 520px;
+      padding: 24px 22px 28px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      animation: cardIn 0.7s var(--ease) both;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(18px) scale(0.98); }
+    }
+
+    @media (min-width: 600px) {
+      .card { padding: 32px 36px 36px; }
+    }
+
+    /* ---------- progress bar ---------- */
+    .top {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .bar {
+      height: 8px;
+      margin-bottom: 26px;
+      overflow: hidden;
+      background: var(--soft);
+      border-radius: 999px;
+    }
+
+    .bar i {
+      position: relative;
+      display: block;
+      width: 0;
+      height: 100%;
+      overflow: hidden;
+      background: linear-gradient(90deg, var(--accent), var(--accent-b));
+      border-radius: 999px;
+      transition: width 0.7s var(--ease);
+    }
+
+    /* a light streak keeps sliding across the filled part */
+    .bar i::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+      transform: translateX(-100%);
+      animation: shine 2.4s ease-in-out infinite;
+    }
+
+    @keyframes shine { to { transform: translateX(100%); } }
+
+    /* ---------- step transition (fade + slide + tiny scale) ---------- */
+    #stage {
+      transition: opacity 0.26s ease, transform 0.26s var(--ease);
+    }
+    #stage.hide {
+      opacity: 0;
+      transform: translateX(var(--x, 0)) scale(0.985);
+    }
+
+    /* ---------- text ---------- */
+    h1, h2 {
+      margin: 0 0 10px;
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      outline: none;
+    }
+    h1 { font-size: clamp(1.7rem, 6vw, 2.1rem); }
+    h2 { font-size: clamp(1.35rem, 5vw, 1.65rem); margin-bottom: 20px; }
+
+    .lead { margin: 0 0 22px; color: var(--muted); }
+
+    .hero {
+      display: inline-block;
+      margin-bottom: 8px;
+      font-size: 2.6rem;
+      transform-origin: 70% 70%;
+      animation: wave 2.4s ease-in-out infinite;
+    }
+    @keyframes wave {
+      0%, 60%, 100% { transform: rotate(0); }
+      10%, 30% { transform: rotate(16deg); }
+      20%, 40% { transform: rotate(-10deg); }
+      50% { transform: rotate(8deg); }
+    }
+
+    /* ---------- answer options ---------- */
+    .options { display: flex; flex-direction: column; gap: 10px; }
+
+    .option {
+      display: block;
+      cursor: pointer;
+      animation: rise 0.5s var(--ease) both;
+      animation-delay: calc(var(--i, 0) * 60ms);
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+    }
+
+    /* the real radio stays in the page for keyboards and screen readers */
+    .option input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+    }
+
+    .box {
+      position: relative;
+      display: block;
+      overflow: hidden;
+      padding: 14px 48px 14px 18px;
+      font-weight: 500;
+      background: var(--card);
+      border: 2px solid var(--line);
+      border-radius: 16px;
+      transition: border-color 0.2s, background 0.2s, transform 0.2s var(--ease), box-shadow 0.2s;
+    }
+
+    .box::after {
+      content: "✓";
+      position: absolute;
+      top: 50%;
+      right: 14px;
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--on-accent);
+      background: var(--accent);
+      border-radius: 50%;
+      transform: translateY(-50%) scale(0);
+      transition: transform 0.35s var(--spring);
+    }
+
+    .option:hover .box {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px -10px var(--glow);
+    }
+    .option:active .box { transform: scale(0.98); }
+
+    .option input:checked + .box {
+      background: var(--soft);
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+    .option input:checked + .box::after { transform: translateY(-50%) scale(1); }
+    .option input:focus-visible + .box { outline: 3px solid var(--glow); outline-offset: 2px; }
+
+    /* ---------- free-text answer: slides open under its option ---------- */
+    .other-wrap {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      transition: grid-template-rows 0.35s var(--ease), opacity 0.3s ease;
+    }
+    .other-wrap.open { grid-template-rows: 1fr; opacity: 1; }
+    .other-inner { min-height: 0; overflow: hidden; padding: 0 4px; }
+    .other-wrap.open .other-inner { padding: 8px 4px 4px; }
+
+    input[type="text"] {
+      display: block;
+      width: 100%;
+      padding: 14px 16px;
+      font: inherit;
+      color: var(--ink);
+      background: var(--soft);
+      border: 2px solid transparent;
+      border-radius: 14px;
+      transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    }
+    input[type="text"]::placeholder { color: var(--muted); }
+    input[type="text"]:focus {
+      outline: none;
+      background: var(--card);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px var(--glow);
+    }
+
+    label.field { display: block; margin-bottom: 8px; font-weight: 700; font-size: 0.95rem; }
+
+    /* ---------- buttons ---------- */
+    .actions { display: flex; gap: 10px; margin-top: 22px; }
+
+    .btn {
+      position: relative;
+      overflow: hidden;
+      padding: 14px 24px;
+      font: inherit;
+      font-weight: 700;
+      border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: transform 0.2s var(--ease), box-shadow 0.2s, opacity 0.2s, border-color 0.2s, color 0.2s;
+    }
+    .btn:hover:not(:disabled) { transform: translateY(-2px); }
+    .btn:active:not(:disabled) { transform: scale(0.96); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn:focus-visible { outline: 3px solid var(--glow); outline-offset: 3px; }
+
+    .primary {
+      flex: 1;
+      color: var(--on-accent);
+      background: linear-gradient(135deg, var(--accent), var(--accent-b));
+      box-shadow: 0 10px 22px -8px var(--glow);
+    }
+    .primary:hover:not(:disabled) { box-shadow: 0 14px 28px -8px var(--glow); }
+
+    .ghost {
+      color: var(--muted);
+      background: transparent;
+      border: 2px solid var(--line);
+    }
+    .ghost:hover:not(:disabled) { color: var(--ink); border-color: var(--accent); }
+
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.28;
+      pointer-events: none;
+      transform: scale(0);
+      animation: ripple 0.6s ease-out forwards;
+    }
+    @keyframes ripple { to { transform: scale(1); opacity: 0; } }
+
+    .error { min-height: 1.5em; margin: 10px 0 0; font-size: 0.9rem; font-weight: 600; color: var(--error); }
+
+    /* ---------- done screen ---------- */
+    .check {
+      display: grid;
+      place-items: center;
+      width: 64px;
+      height: 64px;
+      margin-bottom: 14px;
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: var(--on-accent);
+      background: linear-gradient(135deg, var(--accent), var(--accent-b));
+      border-radius: 50%;
+      box-shadow: 0 12px 26px -8px var(--glow);
+      animation: pop 0.7s var(--spring) both;
+    }
+    @keyframes pop { from { transform: scale(0) rotate(-30deg); } }
+
+    .summary {
+      margin: 0;
+      padding: 6px 18px;
+      list-style: none;
+      font-size: 0.92rem;
+      background: var(--soft);
+      border-radius: 18px;
+    }
+    .summary li { padding: 11px 0; animation: rise 0.5s var(--ease) both; animation-delay: calc(var(--i, 0) * 60ms); }
+    .summary li + li { border-top: 1px solid var(--line); }
+    .summary b { display: block; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="card">
+    <div class="top"><span id="label">Ready?</span><span id="pct">0%</span></div>
+    <div class="bar" id="bar" role="progressbar" aria-label="Quiz progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="fill"></i></div>
+    <div id="stage" aria-live="polite"></div>
+  </main>
+
+  <script>
+    // Where the answers go. FormSubmit sends them to this inbox, no backend needed.
+    // First time anyone submits, FormSubmit emails an activation link to this address:
+    // open it once and click the button, after that every submission arrives.
+    // shortcut: the email is visible in the page source, use FormSubmit's alias to hide it.
+    const EMAIL = "darren.raffazka@gmail.com";
+
+    // Edit, add or remove questions here. "Something else" is added to every question automatically.
+    const questions = [
+      { q: "What's your perfect weekend vibe?",
+        options: ["Couch, snacks & a good show 🛋️", "Coffee shop hopping ☕", "Outdoors: a hike or road trip 🥾", "Gaming marathon 🎮"] },
+      { q: "When you're stressed, you usually...",
+        options: ["Sleep it off 😴", "Blast your favorite playlist 🎧", "Vent to a friend 💬", "Eat something delicious 🍜"] },
+      { q: "What's on repeat lately?",
+        options: ["Pop hits 🎤", "Indie / rock 🎸", "Hip-hop / R&B 🎶", "Lo-fi beats 🌙"] },
+      { q: "Your go-to midnight snack?",
+        options: ["Instant noodles 🍜", "Leftover fried rice 🍳", "Something fried & crunchy 🍟", "Anything sweet 🍫"] },
+      { q: "In a friend group, you're the one who...",
+        options: ["Listens to everyone 👂", "Cracks the jokes 😂", "Plans the hangouts 🚗", "Gives the (unasked) advice 🧠"] },
+      { q: "Pick a superpower!",
+        options: ["Teleportation ✨", "Mind reading 🔮", "Freezing time ⏳", "Flying 🕊️"] },
+      { q: "One free week, anywhere. Where to?",
+        options: ["A beach 🏖️", "The mountains ⛰️", "A big city abroad 🌆", "Home, doing absolutely nothing 🏡"] },
+      { q: "What makes a friendship feel right?",
+        options: ["Being fully myself 🌿", "Conversations that just flow 🗨️", "Always having each other's back 🤝", "The same sense of humor 😆"] }
+    ];
+
+    const OTHER_LABEL = "Something else (type your own)";
+    const SEND_LABEL = "Send my answers 💌";
+    const SEND_TIMEOUT_MS = 15000;
+
+    const stage = document.getElementById("stage");
+    const fill = document.getElementById("fill");
+    const bar = document.getElementById("bar");
+    const labelEl = document.getElementById("label");
+    const pctEl = document.getElementById("pct");
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    let name = "";
+    let current = 0;
+    let busy = false;     // true while a step transition runs, so a double-click can't skip a question
+    let sending = false;  // true while the email request is in flight
+    // answers[i] = { value: "answer text", custom: true when typed by the user }
+    const answers = [];
+
+    // ---------- helpers ----------
+    // All user text goes in through textContent, so it is never read as HTML.
+    function el(tag, props, children) {
+      const node = document.createElement(tag);
+      Object.assign(node, props || {});
+      (children || []).forEach(function (c) { node.append(c); });
+      return node;
+    }
+
+    function setProgress(percent, label) {
+      const p = Math.round(percent);
+      fill.style.width = p + "%";
+      pctEl.textContent = p + "%";
+      labelEl.textContent = label;
+      bar.setAttribute("aria-valuenow", p);
+    }
+
+    // Fade + slide + tiny scale to the next screen. dir: 1 forward, -1 back.
+    function swap(render, dir) {
+      busy = true;
+      stage.style.setProperty("--x", (-28 * dir) + "px");
+      stage.classList.add("hide");
+      setTimeout(function () {
+        stage.replaceChildren();
+        render();
+        // park the new screen on the opposite side without animating, then let it glide in
+        stage.style.transition = "none";
+        stage.style.setProperty("--x", (28 * dir) + "px");
+        stage.getBoundingClientRect();
+        stage.style.transition = "";
+        stage.classList.remove("hide");
+        const heading = stage.querySelector("h1, h2");
+        if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
+        busy = false;
+      }, reduceMotion ? 0 : 260);
+    }
+
+    // ---------- ripple on buttons and options ----------
+    document.addEventListener("pointerdown", function (e) {
+      if (reduceMotion) { return; }
+      const host = e.target.closest(".btn, .box");
+      if (!host || host.disabled) { return; }
+      const rect = host.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height) * 2;
+      const dot = el("span", { className: "ripple" });
+      dot.style.cssText = "width:" + size + "px;height:" + size + "px;left:" +
+        (e.clientX - rect.left - size / 2) + "px;top:" + (e.clientY - rect.top - size / 2) + "px";
+      host.append(dot);
+      dot.addEventListener("animationend", function () { dot.remove(); });
+    });
+
+    // ---------- screen 1: intro ----------
+    function renderIntro() {
+      setProgress(0, "Ready?");
+      const input = el("input", { type: "text", id: "name", maxLength: 40, autocomplete: "given-name", placeholder: "Your name" });
+      input.value = name;
+      const error = el("p", { className: "error" });
+      const start = el("button", { className: "btn primary", textContent: "Let's go →" });
+
+      function go() {
+        if (busy) { return; }
+        const v = input.value.trim();
+        if (!v) { error.textContent = "Pop your name in first 🙂"; input.focus(); return; }
+        name = v;
+        current = 0;
+        swap(renderQuestion, 1);
+      }
+      start.addEventListener("click", go);
+      input.addEventListener("keydown", function (e) { if (e.key === "Enter") { go(); } });
+
+      stage.append(
+        el("span", { className: "hero", textContent: "👋" }),
+        el("h1", { textContent: "Let's get to know you" }),
+        el("p", { className: "lead", textContent: "Just " + questions.length + " quick, easy questions so I can learn what you're all about. No right or wrong answers!" }),
+        el("label", { className: "field", htmlFor: "name", textContent: "What should I call you?" }),
+        input,
+        error,
+        el("div", { className: "actions" }, [start])
+      );
+    }
+
+    // ---------- screens 2..N: one question at a time ----------
+    function renderQuestion() {
+      const item = questions[current];
+      const saved = answers[current];
+      const isLast = current === questions.length - 1;
+      setProgress(current / questions.length * 100, "Question " + (current + 1) + " of " + questions.length);
+
+      const error = el("p", { className: "error" });
+      error.setAttribute("role", "alert");
+
+      const custom = el("input", { type: "text", maxLength: 200, placeholder: "Type your answer here...", autocomplete: "off", tabIndex: -1 });
+      custom.setAttribute("aria-label", "Your own answer");
+      const wrap = el("div", { className: "other-wrap" }, [el("div", { className: "other-inner" }, [custom])]);
+
+      function openOther(open) {
+        wrap.classList.toggle("open", open);
+        custom.tabIndex = open ? 0 : -1;
+      }
+
+      const group = el("div", { className: "options" });
+      group.setAttribute("role", "radiogroup");
+      group.setAttribute("aria-labelledby", "q-title");
+
+      function addOption(text, isOther, index) {
+        const radio = el("input", { type: "radio", name: "answer", value: text });
+        radio.addEventListener("change", function () {
+          openOther(isOther);
+          error.textContent = "";
+          if (isOther) { setTimeout(function () { custom.focus(); }, reduceMotion ? 0 : 150); }
+        });
+        if (saved && (isOther ? saved.custom : saved.value === text)) {
+          radio.checked = true;
+          if (isOther) { custom.value = saved.value; openOther(true); }
+        }
+        const option = el("label", { className: "option" }, [radio, el("span", { className: "box", textContent: isOther ? "✍️ " + text : text })]);
+        option.style.setProperty("--i", index);
+        group.append(option);
+        return radio;
+      }
+
+      item.options.forEach(function (text, i) { addOption(text, false, i); });
+      const otherRadio = addOption(OTHER_LABEL, true, item.options.length);
+      group.append(wrap);
+
+      const back = el("button", { className: "btn ghost", textContent: "Back" });
+      const next = el("button", { className: "btn primary", textContent: isLast ? SEND_LABEL : "Next →" });
+
+      // quiet = used by Back: keep the answer if it is complete, show no error otherwise.
+      function save(quiet) {
+        const picked = group.querySelector("input[name=answer]:checked");
+        if (!picked) { if (!quiet) { error.textContent = "Pick one to keep going 🙂"; } return false; }
+        if (picked === otherRadio) {
+          const text = custom.value.trim();
+          if (!text) { if (!quiet) { error.textContent = "Type your answer first ✍️"; custom.focus(); } return false; }
+          answers[current] = { value: text, custom: true };
+        } else {
+          answers[current] = { value: picked.value, custom: false };
+        }
+        return true;
+      }
+
+      back.addEventListener("click", function () {
+        if (busy || sending) { return; }
+        save(true);
+        if (current === 0) { swap(renderIntro, -1); return; }
+        current--;
+        swap(renderQuestion, -1);
+      });
+
+      next.addEventListener("click", function () {
+        if (busy || sending || !save(false)) { return; }
+        if (isLast) { send(next, error); return; }
+        current++;
+        swap(renderQuestion, 1);
+      });
+
+      custom.addEventListener("keydown", function (e) { if (e.key === "Enter") { next.click(); } });
+      custom.addEventListener("input", function () { error.textContent = ""; });
+
+      stage.append(
+        el("h2", { id: "q-title", textContent: item.q }),
+        group,
+        error,
+        el("div", { className: "actions" }, [back, next])
+      );
+    }
+
+    // ---------- send to email ----------
+    // One key per question, in order, so the email reads like a form.
+    function buildPayload() {
+      const data = {
+        _subject: name + " just finished your quiz! 🎉",
+        _template: "table",
+        _captcha: "false",
+        Name: name,
+        Sent: new Date().toLocaleString("en-US")
+      };
+      questions.forEach(function (item, i) {
+        const a = answers[i];
+        data[(i + 1) + ". " + item.q] = a.custom ? "Something else: " + a.value : a.value;
+      });
+      return data;
+    }
+
+    async function send(button, error) {
+      sending = true;
+      button.disabled = true;
+      button.textContent = "Sending...";
+      error.textContent = "";
+      const ctrl = new AbortController();
+      const timer = setTimeout(function () { ctrl.abort(); }, SEND_TIMEOUT_MS);
+      try {
+        const res = await fetch("https://formsubmit.co/ajax/" + EMAIL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Accept": "application/json" },
+          body: JSON.stringify(buildPayload()),
+          signal: ctrl.signal
+        });
+        const result = await res.json().catch(function () { return {}; });
+        if (!res.ok || String(result.success) === "false") {
+          console.warn("FormSubmit:", result.message || res.status);
+          throw new Error("send failed");
+        }
+        swap(renderDone, 1);
+      } catch (e) {
+        error.textContent = "Couldn't send it. Check your connection and try again 🙏";
+        button.disabled = false;
+        button.textContent = SEND_LABEL;
+      } finally {
+        clearTimeout(timer);
+        sending = false;
+      }
+    }
+
+    // ---------- last screen ----------
+    function renderDone() {
+      setProgress(100, "All done!");
+      const list = el("ul", { className: "summary" });
+      questions.forEach(function (item, i) {
+        const li = el("li", {}, [el("b", { textContent: item.q }), answers[i].value]);
+        li.style.setProperty("--i", i);
+        list.append(li);
+      });
+      stage.append(
+        el("div", { className: "check", textContent: "✓" }),
+        el("h1", { textContent: "Thanks, " + name + "! 🎉" }),
+        el("p", { className: "lead", textContent: "Your answers are on their way. This was fun, thanks for sharing!" }),
+        list
+      );
+    }
+
+    renderIntro();
+  </script>
+</body>
+</html>
